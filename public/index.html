@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hookpoint Webhook Server & Evaluator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .animate-pulse-subtle {
+      animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans antialiased">
+  <!-- Top Navigation -->
+  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+          HP
+        </div>
+        <div>
+          <span class="font-bold text-lg text-white">Hookpoint</span>
+          <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-400 border border-indigo-800">Evaluator v1.0</span>
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2 text-xs text-slate-400 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/60">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>Status: <strong class="text-emerald-400" id="server-status">Online</strong></span>
+        </div>
+        <button onclick="refreshAll()" class="px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-lg transition border border-slate-700 flex items-center space-x-1">
+          <span>🔄 Refresh</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <!-- Server Banner & Stats -->
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div class="bg-slate-800/60 border border-slate-700/70 rounded-xl p-5 shadow-sm">
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Inbound Verified</div>
+        <div class="text-3xl font-extrabold text-emerald-400 mt-2" id="stat-inbound">0</div>
+        <div class="text-xs text-slate-400 mt-1">Processed via <code class="text-indigo-300">WebhookReceiver</code></div>
+      </div>
+      <div class="bg-slate-800/60 border border-slate-700/70 rounded-xl p-5 shadow-sm">
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Outbound Delivered</div>
+        <div class="text-3xl font-extrabold text-indigo-400 mt-2" id="stat-delivered">0</div>
+        <div class="text-xs text-slate-400 mt-1">Dispatched successfully</div>
+      </div>
+      <div class="bg-slate-800/60 border border-slate-700/70 rounded-xl p-5 shadow-sm">
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Delivery Success Rate</div>
+        <div class="text-3xl font-extrabold text-blue-400 mt-2" id="stat-success-rate">100%</div>
+        <div class="text-xs text-slate-400 mt-1" id="stat-failed-sub">0 failed attempts</div>
+      </div>
+      <div class="bg-slate-800/60 border border-slate-700/70 rounded-xl p-5 shadow-sm">
+        <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Active Subscribers</div>
+        <div class="text-3xl font-extrabold text-purple-400 mt-2" id="stat-endpoints">0</div>
+        <div class="text-xs text-slate-400 mt-1">Fan-out endpoints registered</div>
+      </div>
+    </section>
+
+    <!-- Main Workspace Tabs -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- Left Column: Testing Suite -->
+      <div class="lg:col-span-7 space-y-6">
+
+        <!-- 1-Click Evaluation Suite Card -->
+        <div class="bg-slate-800/70 border border-slate-700 rounded-xl p-6 shadow-md">
+          <div class="flex items-center justify-between pb-4 border-b border-slate-700/80 mb-5">
+            <div>
+              <h2 class="text-lg font-bold text-white flex items-center">
+                <span class="mr-2">⚡</span> Quick Evaluation Scenarios
+              </h2>
+              <p class="text-xs text-slate-400 mt-0.5">Test cryptographic verification, replay defense, and tolerance in 1-click.</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button onclick="runScenario('valid')" class="text-left p-3.5 rounded-lg border border-emerald-500/30 bg-emerald-950/20 hover:bg-emerald-950/40 transition group">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-emerald-400">1. Valid Webhook</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-900/60 text-emerald-300 font-mono">200 OK</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">Computes HMAC-SHA256 signature with current timestamp and unique event ID.</p>
+            </button>
+
+            <button onclick="runScenario('replay')" class="text-left p-3.5 rounded-lg border border-amber-500/30 bg-amber-950/20 hover:bg-amber-950/40 transition group">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-amber-400">2. Replay Attack</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-amber-900/60 text-amber-300 font-mono">401 BLOCKED</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">Replays a previously used <code class="text-amber-200">x-webhook-id</code> within cache TTL.</p>
+            </button>
+
+            <button onclick="runScenario('bad_sig')" class="text-left p-3.5 rounded-lg border border-rose-500/30 bg-rose-950/20 hover:bg-rose-950/40 transition group">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-rose-400">3. Tampered Signature</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-900/60 text-rose-300 font-mono">401 MISMATCH</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">Sends modified payload or corrupted signature hash.</p>
+            </button>
+
+            <button onclick="runScenario('expired')" class="text-left p-3.5 rounded-lg border border-purple-500/30 bg-purple-950/20 hover:bg-purple-950/40 transition group">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-purple-400">4. Expired Timestamp</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-900/60 text-purple-300 font-mono">401 TOLERANCE</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">Timestamp set 10 minutes in the past (tolerance window is 300s).</p>
+            </button>
+          </div>
+
+          <div class="mt-3">
+            <button onclick="runScenario('flaky')" class="w-full text-left p-3.5 rounded-lg border border-blue-500/30 bg-blue-950/20 hover:bg-blue-950/40 transition">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-blue-400">5. Exponential Backoff & Retry Test</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded bg-blue-900/60 text-blue-300 font-mono">AUTO-RETRY</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">Dispatches to flaky mock endpoint: fails 2 times with 500, then succeeds on 3rd attempt with jittered backoff.</p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom Inbound Webhook Sender -->
+        <div class="bg-slate-800/70 border border-slate-700 rounded-xl p-6 shadow-md space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-700/80">
+            <h2 class="text-lg font-bold text-white flex items-center">
+              <span class="mr-2">📨</span> Custom Inbound Webhook Tester
+            </h2>
+            <span class="text-xs text-slate-400">Target: <code class="text-indigo-400 font-mono">POST /webhook</code></span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Event Name (x-webhook-event)</label>
+              <input type="text" id="custom-event" value="order.created" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Custom Event ID (x-webhook-id)</label>
+              <input type="text" id="custom-id" placeholder="Leave empty for auto-UUID" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1">Payload (JSON)</label>
+            <textarea id="custom-payload" rows="4" class="w-full font-mono bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-emerald-400 focus:outline-none focus:border-indigo-500">{
+  "orderId": "ord_98765",
+  "customer": "Sarah Connor",
+  "amount": 249.99,
+  "currency": "USD"
+}</textarea>
+          </div>
+
+          <div class="flex items-center justify-between pt-2">
+            <button onclick="sendCustomWebhook()" class="px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-lg shadow-indigo-600/30 transition flex items-center space-x-2">
+              <span>🚀 Sign & Send to /webhook</span>
+            </button>
+            <button onclick="generateCurl()" class="text-xs text-slate-400 hover:text-indigo-300 underline">
+              View cURL Command
+            </button>
+          </div>
+        </div>
+
+        <!-- Outbound Dispatcher & Fan-Out Card -->
+        <div class="bg-slate-800/70 border border-slate-700 rounded-xl p-6 shadow-md space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-700/80">
+            <h2 class="text-lg font-bold text-white flex items-center">
+              <span class="mr-2">📡</span> WebhookDispatcher Fan-Out
+            </h2>
+            <button onclick="quickRegisterSelf()" class="text-xs bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded text-slate-200">
+              + Add /webhook Subscriber
+            </button>
+          </div>
+
+          <p class="text-xs text-slate-400">Publish an event to all subscribed endpoints with topic pattern matching.</p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Event Topic</label>
+              <input type="text" id="dispatch-topic" value="invoice.paid" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1">Payload Amount</label>
+              <input type="number" id="dispatch-amount" value="550.00" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white">
+            </div>
+          </div>
+
+          <button onclick="dispatchFanOut()" class="w-full py-2.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs shadow-lg shadow-purple-600/30 transition">
+            📢 Dispatch to Matching Endpoints
+          </button>
+
+          <!-- Registered Endpoints Table -->
+          <div class="mt-4 pt-4 border-t border-slate-700">
+            <div class="text-xs font-semibold text-slate-300 mb-2">Registered Subscriber Endpoints</div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs border border-slate-700/60 rounded-lg overflow-hidden">
+                <thead class="bg-slate-900/80 text-slate-400">
+                  <tr>
+                    <th class="p-2.5">ID</th>
+                    <th class="p-2.5">URL</th>
+                    <th class="p-2.5">Events</th>
+                    <th class="p-2.5 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="endpoints-table" class="divide-y divide-slate-800 text-slate-300">
+                  <tr><td colspan="4" class="p-4 text-center text-slate-500">No endpoints registered yet</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Live Logs & Inspector -->
+      <div class="lg:col-span-5 space-y-6">
+
+        <!-- Live Response Inspector -->
+        <div class="bg-slate-800/70 border border-slate-700 rounded-xl p-5 shadow-md space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-700">
+            <h3 class="text-sm font-bold text-white flex items-center">
+              <span class="mr-2">🔍</span> Inspection Result
+            </h3>
+            <span id="response-status-badge" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-700 text-slate-300">AWAITING REQUEST</span>
+          </div>
+
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between text-slate-400">
+              <span>Latency: <strong class="text-white" id="response-latency">-</strong></span>
+              <span>Timestamp: <strong class="text-white" id="response-time">-</strong></span>
+            </div>
+            <div>
+              <div class="text-slate-400 mb-1">Response Body:</div>
+              <pre id="response-body" class="bg-slate-950 p-3 rounded-lg text-emerald-400 font-mono text-[11px] overflow-x-auto max-h-56 leading-relaxed border border-slate-800">{
+  "message": "Click any evaluation button on the left to inspect server response."
+}</pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Inbound Verified Events Feed -->
+        <div class="bg-slate-800/70 border border-slate-700 rounded-xl p-5 shadow-md space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-700">
+            <h3 class="text-sm font-bold text-white flex items-center">
+              <span class="mr-2">📥</span> Verified Inbound Log
+            </h3>
+            <button onclick="clearInbound()" class="text-[11px] text-slate-400 hover:text-rose-400">Clear</button>
+          </div>
+          <div id="inbound-events-list" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+            <div class="text-xs text-slate-500 text-center py-6">No inbound webhooks received yet.</div>
+          </div>
+        </div>
+
+        <!-- Outbound Deliveries Log -->
+        <div class="bg-slate-800/70 border border-slate-700 rounded-xl p-5 shadow-md space-y-3">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-700">
+            <h3 class="text-sm font-bold text-white flex items-center">
+              <span class="mr-2">🚀</span> Outbound Delivery History
+            </h3>
+            <span class="text-[11px] text-slate-400" id="delivery-count-badge">0 records</span>
+          </div>
+          <div id="outbound-deliveries-list" class="space-y-2 max-h-64 overflow-y-auto pr-1">
+            <div class="text-xs text-slate-500 text-center py-6">No outbound deliveries recorded yet.</div>
+          </div>
+        </div>
+
+        <!-- Evaluation Reference Card for Instructor -->
+        <div class="bg-slate-950 border border-indigo-900/60 rounded-xl p-4 text-xs space-y-2">
+          <div class="font-bold text-indigo-300">🎓 Instructor Evaluation Notes</div>
+          <p class="text-slate-400 leading-relaxed">
+            This server integrates the <code class="text-white">hookpoint</code> package. Incoming webhooks are verified through <code class="text-indigo-400">WebhookReceiver.prototype.handle()</code> in pure Node.js with constant-time HMAC comparison and replay caching.
+          </p>
+          <div class="font-mono text-[10px] text-slate-500 bg-slate-900 p-2 rounded border border-slate-800">
+            Automated test suite: <code>npm test</code><br>
+            CLI simulation script: <code>npm run simulate</code>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    let activeSecret = 'whsec_evaluation_test_secret_2026';
+    let lastSentEventId = null;
+
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        document.getElementById('stat-inbound').textContent = data.inbound?.total || 0;
+        document.getElementById('stat-delivered').textContent = data.outbound?.delivered || 0;
+        document.getElementById('stat-success-rate').textContent = (data.outbound?.successRate ?? 100) + '%';
+        document.getElementById('stat-failed-sub').textContent = `${data.outbound?.failed || 0} failed / ${data.outbound?.total || 0} total`;
+        document.getElementById('stat-endpoints').textContent = data.endpoints?.total || 0;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function fetchEndpoints() {
+      try {
+        const res = await fetch('/api/endpoints');
+        const data = await res.json();
+        const tbody = document.getElementById('endpoints-table');
+        if (!data.endpoints || data.endpoints.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="p-3 text-center text-slate-500">No subscriber endpoints registered.</td></tr>';
+          return;
+        }
+        tbody.innerHTML = data.endpoints.map(ep => `
+          <tr class="hover:bg-slate-800/40">
+            <td class="p-2 font-mono text-[11px] text-indigo-300">${ep.id}</td>
+            <td class="p-2 truncate max-w-[150px] font-mono text-[11px] text-slate-300">${ep.url}</td>
+            <td class="p-2"><span class="px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-purple-300">${ep.events.join(', ')}</span></td>
+            <td class="p-2 text-right">
+              <button onclick="deleteEndpoint('${ep.id}')" class="text-rose-400 hover:text-rose-300 text-[11px]">Remove</button>
+            </td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function fetchInboundEvents() {
+      try {
+        const res = await fetch('/api/events?limit=20');
+        const data = await res.json();
+        const container = document.getElementById('inbound-events-list');
+        if (!data.events || data.events.length === 0) {
+          container.innerHTML = '<div class="text-xs text-slate-500 text-center py-6">No inbound webhooks received yet.</div>';
+          return;
+        }
+        container.innerHTML = data.events.map(ev => `
+          <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-lg text-xs space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-emerald-400">${ev.event}</span>
+              <span class="text-[10px] text-slate-500">${new Date(ev.receivedAt).toLocaleTimeString()}</span>
+            </div>
+            <div class="text-[10px] font-mono text-slate-400 truncate">ID: ${ev.eventId || 'none'}</div>
+            <pre class="text-[10px] text-slate-300 bg-slate-950 p-1.5 rounded overflow-x-auto">${JSON.stringify(ev.payload, null, 2)}</pre>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function fetchDeliveries() {
+      try {
+        const res = await fetch('/api/deliveries?limit=20');
+        const data = await res.json();
+        const container = document.getElementById('outbound-deliveries-list');
+        document.getElementById('delivery-count-badge').textContent = `${data.total || 0} records`;
+        if (!data.records || data.records.length === 0) {
+          container.innerHTML = '<div class="text-xs text-slate-500 text-center py-6">No outbound deliveries recorded yet.</div>';
+          return;
+        }
+        container.innerHTML = data.records.map(rec => {
+          const isSuccess = rec.status === 'delivered';
+          const badgeClass = isSuccess ? 'bg-emerald-950 text-emerald-300 border-emerald-800' : 'bg-rose-950 text-rose-300 border-rose-800';
+          return `
+            <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-lg text-xs space-y-1">
+              <div class="flex items-center justify-between">
+                <span class="font-bold text-indigo-300">${rec.eventName}</span>
+                <span class="text-[10px] px-1.5 py-0.5 rounded border ${badgeClass}">${rec.status.toUpperCase()}</span>
+              </div>
+              <div class="text-[10px] font-mono text-slate-400 truncate">${rec.endpointUrl}</div>
+              <div class="flex justify-between text-[10px] text-slate-500">
+                <span>Attempts: ${rec.attemptCount}</span>
+                <span>Latency: ${rec.attempts[0]?.durationMs || 0}ms</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function runScenario(type) {
+      const startTime = performance.now();
+      const payload = { test: true, scenario: type, time: Date.now() };
+      let headers = { 'Content-Type': 'application/json' };
+      let url = '/webhook';
+
+      if (type === 'valid') {
+        const eventId = 'evt_' + Math.random().toString(36).slice(2, 9);
+        lastSentEventId = eventId;
+        const signRes = await fetch('/api/tools/sign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payload })
+        });
+        const signData = await signRes.json();
+        headers['x-webhook-signature'] = signData.header;
+        headers['x-webhook-id'] = eventId;
+        headers['x-webhook-event'] = 'scenario.valid';
+      } else if (type === 'replay') {
+        // Send previous ID or fixed ID twice
+        const eventId = lastSentEventId || 'replay_target_123';
+        const signRes = await fetch('/api/tools/sign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payload })
+        });
+        const signData = await signRes.json();
+        headers['x-webhook-signature'] = signData.header;
+        headers['x-webhook-id'] = eventId;
+        headers['x-webhook-event'] = 'scenario.replay';
+        // Send first one quietly if needed
+        if (!lastSentEventId) {
+          await fetch('/webhook', { method: 'POST', headers, body: JSON.stringify(payload) });
+        }
+      } else if (type === 'bad_sig') {
+        headers['x-webhook-signature'] = 't=' + Math.floor(Date.now() / 1000) + ',v1=deadbeef00000000000000000000000000000000000000000000000000000000';
+        headers['x-webhook-id'] = 'bad_sig_' + Date.now();
+        headers['x-webhook-event'] = 'scenario.tampered';
+      } else if (type === 'expired') {
+        // 10 minutes in the past
+        const oldTimestamp = Math.floor(Date.now() / 1000) - 600;
+        const signRes = await fetch('/api/tools/sign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payload, timestamp: oldTimestamp })
+        });
+        const signData = await signRes.json();
+        headers['x-webhook-signature'] = signData.header;
+        headers['x-webhook-id'] = 'expired_' + Date.now();
+        headers['x-webhook-event'] = 'scenario.expired';
+      } else if (type === 'flaky') {
+        // Dispatch to /mock/flaky
+        url = '/api/webhooks/send';
+        const dispatchBody = {
+          url: `${window.location.origin}/mock/flaky`,
+          eventName: 'order.retry_test',
+          payload: { orderId: 'retry_demo_101', simulate: 'flaky_500' },
+          retry: { maxRetries: 3, initialDelayMs: 200, strategy: 'exponential' }
+        };
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dispatchBody)
+        });
+        const data = await res.json();
+        const duration = Math.round(performance.now() - startTime);
+        displayInspector(res.status, duration, data);
+        refreshAll();
+        return;
+      }
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      const duration = Math.round(performance.now() - startTime);
+      displayInspector(res.status, duration, data);
+      refreshAll();
+    }
+
+    async function sendCustomWebhook() {
+      const startTime = performance.now();
+      const eventName = document.getElementById('custom-event').value || 'custom.event';
+      const eventId = document.getElementById('custom-id').value || ('evt_' + Math.random().toString(36).slice(2, 9));
+      let payload;
+      try {
+        payload = JSON.parse(document.getElementById('custom-payload').value);
+      } catch (e) {
+        alert('Invalid JSON in payload editor');
+        return;
+      }
+
+      const signRes = await fetch('/api/tools/sign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload })
+      });
+      const signData = await signRes.json();
+
+      const res = await fetch('/webhook', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-webhook-signature': signData.header,
+          'x-webhook-id': eventId,
+          'x-webhook-event': eventName
+        },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      const duration = Math.round(performance.now() - startTime);
+      displayInspector(res.status, duration, data);
+      refreshAll();
+    }
+
+    async function quickRegisterSelf() {
+      const endpointUrl = `${window.location.origin}/webhook`;
+      const res = await fetch('/api/endpoints', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: 'local-receiver',
+          url: endpointUrl,
+          events: ['*']
+        })
+      });
+      await res.json();
+      fetchEndpoints();
+      fetchStats();
+    }
+
+    async function deleteEndpoint(id) {
+      await fetch(`/api/endpoints/${id}`, { method: 'DELETE' });
+      fetchEndpoints();
+      fetchStats();
+    }
+
+    async function dispatchFanOut() {
+      const topic = document.getElementById('dispatch-topic').value || 'invoice.paid';
+      const amount = parseFloat(document.getElementById('dispatch-amount').value) || 100;
+      const startTime = performance.now();
+
+      const res = await fetch('/api/events/dispatch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventName: topic,
+          payload: { invoiceId: 'inv_' + Date.now(), amount, currency: 'USD' }
+        })
+      });
+      const data = await res.json();
+      const duration = Math.round(performance.now() - startTime);
+      displayInspector(res.status, duration, data);
+      refreshAll();
+    }
+
+    async function clearInbound() {
+      await fetch('/api/events', { method: 'DELETE' });
+      fetchInboundEvents();
+      fetchStats();
+    }
+
+    function displayInspector(status, latencyMs, body) {
+      const badge = document.getElementById('response-status-badge');
+      badge.textContent = `HTTP ${status}`;
+      badge.className = status === 200 || status === 201
+        ? 'text-xs font-mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800'
+        : 'text-xs font-mono px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800';
+
+      document.getElementById('response-latency').textContent = `${latencyMs}ms`;
+      document.getElementById('response-time').textContent = new Date().toLocaleTimeString();
+      document.getElementById('response-body').textContent = JSON.stringify(body, null, 2);
+    }
+
+    async function generateCurl() {
+      let payload;
+      try {
+        payload = JSON.parse(document.getElementById('custom-payload').value);
+      } catch (e) {
+        payload = { test: true };
+      }
+      const signRes = await fetch('/api/tools/sign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ payload })
+      });
+      const signData = await signRes.json();
+      alert(`Terminal cURL Command:\n\n${signData.curlExample}`);
+    }
+
+    function refreshAll() {
+      fetchStats();
+      fetchEndpoints();
+      fetchInboundEvents();
+      fetchDeliveries();
+    }
+
+    // Initial load
+    refreshAll();
+    setInterval(fetchStats, 5000);
+  </script>
+</body>
+</html>
