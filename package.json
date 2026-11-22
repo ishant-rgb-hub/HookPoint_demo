@@ -1,0 +1,32 @@
+{
+  "name": "hookpoint-server",
+  "version": "1.0.0",
+  "description": "Production-ready Webhook Receiver, Dispatcher, and Evaluation Server using Hookpoint",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node --test test/*.test.js",
+    "simulate": "node simulate.js",
+    "example:express": "node examples/express-server.js",
+    "example:client": "node examples/client-sender.js"
+  },
+  "keywords": [
+    "webhook",
+    "webhook-receiver",
+    "webhook-dispatcher",
+    "hookpoint",
+    "signature-verification",
+    "replay-protection"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@ishant3907/hookpoint": "^1.0.0",
+    "hookpoint": "file:./hookpoint-1.0.0.tgz"
+  }
+}
