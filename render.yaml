@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: hookpoint-webhook-server
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: WEBHOOK_SECRET
+        value: whsec_evaluation_test_secret_2026
+      - key: REPLAY_TOLERANCE_SECONDS
+        value: "300"
+      - key: REPLAY_PROTECTION
+        value: "true"
