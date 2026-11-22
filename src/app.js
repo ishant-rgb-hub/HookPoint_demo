@@ -88,6 +88,7 @@ function createApp(customConfig = {}, customStore = null) {
   });
 
   const indexPath = path.join(__dirname, '..', 'public', 'index.html');
+  const aboutPath = path.join(__dirname, '..', 'public', 'about.html');
 
   /**
    * Main HTTP request listener
@@ -116,6 +117,24 @@ function createApp(customConfig = {}, customStore = null) {
       fs.readFile(indexPath, 'utf8', (err, html) => {
         if (err) {
           sendJson(res, 500, { error: 'Failed to load dashboard interface' });
+          return;
+        }
+        res.writeHead(200, {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Access-Control-Allow-Origin': '*'
+        });
+        res.end(html);
+      });
+      return;
+    }
+
+    // -------------------------------------------------------------
+    // Route 1b: GET /about -> Static landing / demo page
+    // -------------------------------------------------------------
+    if (req.method === 'GET' && (pathname === '/about' || pathname === '/about.html')) {
+      fs.readFile(aboutPath, 'utf8', (err, html) => {
+        if (err) {
+          sendJson(res, 500, { error: 'Failed to load about page' });
           return;
         }
         res.writeHead(200, {

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HookPoint — npm Package Demo</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d2e;
+      --surface2: #22263a;
+      --border: #2e3250;
+      --indigo: #6366f1;
+      --indigo-light: #818cf8;
+      --green: #22d3a0;
+      --amber: #fbbf24;
+      --rose: #f87171;
+      --purple: #c084fc;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --code-bg: #0d1117;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(15,17,23,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .logo-box {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      background: var(--indigo);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 0.85rem; color: #fff;
+    }
+    .nav-links { display: flex; gap: 1.5rem; }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--text); }
+
+    /* ─── HERO ─── */
+    .hero {
+      max-width: 860px;
+      margin: 0 auto;
+      text-align: center;
+      padding: 5rem 2rem 3rem;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(99,102,241,0.12);
+      border: 1px solid rgba(99,102,241,0.3);
+      color: var(--indigo-light);
+      padding: 4px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    .badge .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--indigo);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100%{opacity:1} 50%{opacity:0.4}
+    }
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin-bottom: 1.2rem;
+    }
+    h1 span { color: var(--indigo-light); }
+    .hero-sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 580px;
+      margin: 0 auto 2rem;
+    }
+    .hero-buttons {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 0.65rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--indigo);
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.35);
+    }
+    .btn-primary:hover { background: var(--indigo-light); transform: translateY(-1px); }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .btn-outline:hover { border-color: var(--indigo); color: var(--indigo-light); }
+
+    /* ─── INSTALL STRIP ─── */
+    .install-strip {
+      max-width: 500px;
+      margin: 2.5rem auto 0;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.75rem 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .install-strip code {
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.9rem;
+      color: var(--green);
+    }
+    .copy-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .copy-btn:hover { background: var(--indigo); color: #fff; border-color: var(--indigo); }
+
+    /* ─── SECTION ─── */
+    section {
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 4rem 2rem;
+    }
+    .section-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--indigo-light);
+      margin-bottom: 0.5rem;
+    }
+    h2 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .section-desc {
+      color: var(--muted);
+      max-width: 600px;
+      margin-bottom: 2.5rem;
+      font-size: 0.95rem;
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0 2rem;
+    }
+
+    /* ─── FEATURE CARDS ─── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.2rem;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .feature-card:hover {
+      border-color: var(--indigo);
+      transform: translateY(-2px);
+    }
+    .feature-icon {
+      font-size: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .feature-card h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .feature-card p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    /* ─── CODE BLOCKS ─── */
+    .code-tabs {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--code-bg);
+    }
+    .code-tabs-nav {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .tab-btn {
+      padding: 0.6rem 1.2rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--indigo-light);
+      border-bottom-color: var(--indigo);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+    pre {
+      padding: 1.4rem;
+      overflow-x: auto;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 0.82rem;
+      line-height: 1.65;
+      tab-size: 2;
+    }
+    .kw  { color: #c792ea; }
+    .str { color: #c3e88d; }
+    .fn  { color: #82aaff; }
+    .cm  { color: #546e7a; font-style: italic; }
+    .num { color: #f78c6c; }
+    .prop{ color: #89ddff; }
+
+    /* ─── FLOW DIAGRAM ─── */
+    .flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0;
+      padding: 2.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+    .flow-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.4rem;
+      text-align: center;
+      min-width: 130px;
+    }
+    .flow-box .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.3rem;
+    }
+    .flow-box .name {
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+    .flow-box.highlight { border-color: var(--indigo); }
+    .flow-box.highlight .name { color: var(--indigo-light); }
+    .flow-arrow {
+      font-size: 1.3rem;
+      color: var(--indigo);
+      padding: 0 0.5rem;
+      flex-shrink: 0;
+    }
+
+    /* ─── API TABLE ─── */
+    .api-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.83rem;
+    }
+    .api-table th {
+      text-align: left;
+      padding: 0.6rem 1rem;
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      border-bottom: 1px solid var(--border);
+    }
+    .api-table td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .api-table tr:last-child td { border-bottom: none; }
+    .api-table tr:hover td { background: rgba(255,255,255,0.02); }
+    code.inline {
+      font-family: 'Cascadia Code', monospace;
+      font-size: 0.8rem;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--indigo-light);
+    }
+
+    /* ─── ABOUT / INSTRUCTOR CARD ─── */
+    .instructor-card {
+      background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(192,132,252,0.06));
+      border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 14px;
+      padding: 2rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    @media(max-width:640px){ .instructor-card { grid-template-columns: 1fr; } }
+    .instructor-card h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: var(--indigo-light);
+    }
+    .check-list { list-style: none; }
+    .check-list li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--text);
+      padding: 0.3rem 0;
+    }
+    .check-list li::before {
+      content: '✓';
+      color: var(--green);
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .cmd-list { list-style: none; }
+    .cmd-list li {
+      font-family: monospace;
+      font-size: 0.82rem;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      margin-bottom: 0.5rem;
+      color: var(--green);
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      text-align: center;
+      padding: 2.5rem 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    footer a { color: var(--indigo-light); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+<!-- ─── NAVIGATION ─── -->
+<nav>
+  <div class="nav-logo">
+    <div class="logo-box">HP</div>
+    <span>HookPoint</span>
+    <span style="font-size:0.72rem;color:var(--muted);font-weight:400;margin-left:4px;">v1.0.0</span>
+  </div>
+  <div class="nav-links">
+    <a href="#features">Features</a>
+    <a href="#usage">Usage</a>
+    <a href="#api">API</a>
+    <a href="#instructor">For Instructor</a>
+    <a href="https://www.npmjs.com/package/@ishant3907/hookpoint" target="_blank" style="color:var(--indigo-light);">npm ↗</a>
+  </div>
+</nav>
+
+<!-- ─── HERO ─── -->
+<div class="hero">
+  <div class="badge">
+    <span class="dot"></span>
+    Zero Dependencies · Pure Node.js · MIT License
+  </div>
+  <h1>Webhooks made<br><span>simple & secure</span></h1>
+  <p class="hero-sub">
+    A lightweight Node.js package for sending webhooks with automatic retries, 
+    HMAC-SHA256 signatures, replay protection, and full delivery tracking.
+  </p>
+  <div class="hero-buttons">
+    <a class="btn btn-primary" href="#usage">View Usage →</a>
+    <a class="btn btn-outline" href="https://github.com/ishant-rgb-hub/HookPoint_demo" target="_blank">GitHub Repo ↗</a>
+  </div>
+  <div class="install-strip">
+    <code>npm install @ishant3907/hookpoint</code>
+    <button class="copy-btn" onclick="copyInstall(this)">Copy</button>
+  </div>
+</div>
+
+<hr class="divider" />
+
+<!-- ─── FEATURES ─── -->
+<section id="features">
+  <div class="section-label">What it does</div>
+  <h2>Everything you need for webhooks</h2>
+  <p class="section-desc">
+    Built using only Node.js native modules — no Express, no Axios, no bloat.
+    Works out of the box with Node.js 18+.
+  </p>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🔁</div>
+      <h3>Automatic Retries</h3>
+      <p>Exponential, linear, or fixed backoff with randomized jitter. Respects <code class="inline">Retry-After</code> headers. Skips non-retryable errors automatically.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔐</div>
+      <h3>Cryptographic Signatures</h3>
+      <p>HMAC-SHA256 signatures in Stripe/Svix format. Constant-time comparison via <code class="inline">crypto.timingSafeEqual</code> to prevent timing attacks.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🛡️</div>
+      <h3>Replay Attack Protection</h3>
+      <p>Configurable timestamp tolerance window. Each <code class="inline">x-webhook-id</code> is tracked — duplicate events are rejected within the cache TTL.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Delivery Tracking</h3>
+      <p>In-memory circular buffer storing full attempt history — status codes, latency, response snippets, timestamps, and real-time success rates.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📡</div>
+      <h3>Fan-Out Dispatcher</h3>
+      <p>Register multiple subscriber endpoints with wildcard topic matching (<code class="inline">user.*</code>, <code class="inline">*</code>). Concurrent delivery with aggregated summaries.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📥</div>
+      <h3>Webhook Receiver</h3>
+      <p>Drop-in handler for <code class="inline">http.createServer</code>. Verifies signatures, checks timestamps, deduplicates events — all in one call.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <h3>Zero Dependencies</h3>
+      <p>Uses only <code class="inline">node:http</code>, <code class="inline">node:https</code>, <code class="inline">node:crypto</code>, <code class="inline">node:events</code>. No third-party packages, ever.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🟦</div>
+      <h3>TypeScript Ready</h3>
+      <p>Complete <code class="inline">.d.ts</code> type declarations included. Full IntelliSense support in VS Code and other IDEs with zero extra setup.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🧪</div>
+      <h3>Fully Tested</h3>
+      <p>Unit and integration test suite using native <code class="inline">node:test</code>. Run with <code class="inline">npm test</code> — no test framework needed.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ─── ARCHITECTURE FLOW ─── -->
+<section>
+  <div class="section-label">Architecture</div>
+  <h2>How it works</h2>
+  <p class="section-desc">HookPoint handles both sides of a webhook — sending (outbound) and receiving (inbound).</p>
+  <div class="flow">
+    <div class="flow-box">
+      <div class="label">Your App</div>
+      <div class="name">Event Source</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box highlight">
+      <div class="label">hookpoint</div>
+      <div class="name">sendWebhook()</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">
+      <div class="label">Network</div>
+      <div class="name">HMAC Signed POST</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box highlight">
+      <div class="label">hookpoint</div>
+      <div class="name">WebhookReceiver</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">
+      <div class="label">Your Handler</div>
+      <div class="name">Verified Event</div>
+    </div>
+  </div>
+  <p style="text-align:center;color:var(--muted);font-size:0.8rem;margin-top:1rem;">
+    Failed deliveries are automatically retried with exponential backoff. Every attempt is logged to the <strong style="color:var(--text);">DeliveryTracker</strong>.
+  </p>
+</section>
+
+<hr class="divider" />
+
+<!-- ─── USAGE TABS ─── -->
+<section id="usage">
+  <div class="section-label">Code Examples</div>
+  <h2>Quick start</h2>
+  <p class="section-desc">Three common patterns — each using only the hookpoint package.</p>
+
+  <div class="code-tabs">
+    <div class="code-tabs-nav">
+      <button class="tab-btn active" onclick="switchTab(this,'tab-send')">Send a Webhook</button>
+      <button class="tab-btn" onclick="switchTab(this,'tab-dispatch')">Fan-Out Dispatcher</button>
+      <button class="tab-btn" onclick="switchTab(this,'tab-receive')">Receive &amp; Verify</button>
+    </div>
+
+    <div id="tab-send" class="tab-panel active">
+<pre><span class="kw">const</span> { <span class="prop">sendWebhook</span> } = <span class="fn">require</span>(<span class="str">'@ishant3907/hookpoint'</span>);
+
+<span class="kw">async function</span> <span class="fn">deliver</span>() {
+  <span class="kw">const</span> record = <span class="kw">await</span> <span class="fn">sendWebhook</span>(<span class="str">'https://api.partner.com/webhook'</span>, {
+    event: <span class="str">'order.placed'</span>,
+    data: { orderId: <span class="str">'ord_123'</span>, total: <span class="num">99.50</span> }
+  }, {
+    secret: <span class="str">'whsec_your_signing_secret'</span>,
+    eventName: <span class="str">'order.placed'</span>,
+    retry: {
+      maxRetries: <span class="num">3</span>,
+      strategy: <span class="str">'exponential'</span>,   <span class="cm">// 'exponential' | 'linear' | 'fixed'</span>
+      initialDelayMs: <span class="num">1000</span>,
+      jitter: <span class="kw">true</span>
+    }
+  });
+
+  console.<span class="fn">log</span>(<span class="str">`Status: <span class="kw">${record.status}</span>`</span>);         <span class="cm">// 'delivered' or 'failed'</span>
+  console.<span class="fn">log</span>(<span class="str">`Attempts: <span class="kw">${record.attemptCount}</span>`</span>);
+}
+
+<span class="fn">deliver</span>();</pre>
+    </div>
+
+    <div id="tab-dispatch" class="tab-panel">
+<pre><span class="kw">const</span> { <span class="prop">WebhookDispatcher</span> } = <span class="fn">require</span>(<span class="str">'@ishant3907/hookpoint'</span>);
+
+<span class="kw">const</span> dispatcher = <span class="kw">new</span> <span class="fn">WebhookDispatcher</span>({
+  defaultSecret: <span class="str">'shared_secret_key'</span>
+});
+
+<span class="cm">// Register subscriber endpoints with event topic patterns</span>
+dispatcher.<span class="fn">registerEndpoint</span>({
+  id: <span class="str">'analytics-svc'</span>,
+  url: <span class="str">'https://analytics.internal/events'</span>,
+  events: [<span class="str">'*'</span>]                        <span class="cm">// receives ALL events</span>
+});
+
+dispatcher.<span class="fn">registerEndpoint</span>({
+  id: <span class="str">'billing-svc'</span>,
+  url: <span class="str">'https://billing.internal/hooks'</span>,
+  events: [<span class="str">'invoice.*'</span>, <span class="str">'order.paid'</span>]  <span class="cm">// wildcard matching</span>
+});
+
+<span class="cm">// Fan-out to all matching subscribers concurrently</span>
+<span class="kw">const</span> summary = <span class="kw">await</span> dispatcher.<span class="fn">dispatch</span>(<span class="str">'order.paid'</span>, {
+  orderId: <span class="str">'ord_789'</span>,
+  amount: <span class="num">450.00</span>
+});
+
+console.<span class="fn">log</span>(<span class="str">`Delivered: <span class="kw">${summary.delivered}</span>/<span class="kw">${summary.total}</span>`</span>);</pre>
+    </div>
+
+    <div id="tab-receive" class="tab-panel">
+<pre><span class="kw">const</span> http = <span class="fn">require</span>(<span class="str">'node:http'</span>);
+<span class="kw">const</span> { <span class="prop">WebhookReceiver</span> } = <span class="fn">require</span>(<span class="str">'@ishant3907/hookpoint'</span>);
+
+<span class="kw">const</span> receiver = <span class="kw">new</span> <span class="fn">WebhookReceiver</span>({
+  secret: <span class="str">'whsec_your_signing_secret'</span>,
+  tolerance: <span class="num">300</span>,        <span class="cm">// 5-minute replay tolerance window</span>
+  replayProtection: <span class="kw">true</span>  <span class="cm">// block duplicate event IDs</span>
+});
+
+<span class="kw">const</span> server = http.<span class="fn">createServer</span>((req, res) => {
+  <span class="kw">if</span> (req.url === <span class="str">'/webhook'</span>) {
+    receiver.<span class="fn">handle</span>(req, res, <span class="kw">async</span> ({ event, payload, eventId }) => {
+      console.<span class="fn">log</span>(<span class="str">`✓ Verified event: <span class="kw">${event}</span>`</span>, payload);
+      <span class="cm">// Process your business logic here...</span>
+      <span class="kw">return</span> { received: <span class="kw">true</span> };
+    });
+  }
+});
+
+server.<span class="fn">listen</span>(<span class="num">3000</span>);</pre>
+    </div>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ─── API REFERENCE ─── -->
+<section id="api">
+  <div class="section-label">API Reference</div>
+  <h2>Key exports</h2>
+  <p class="section-desc">All exports from <code class="inline">require('@ishant3907/hookpoint')</code></p>
+
+  <div style="border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+    <table class="api-table">
+      <thead>
+        <tr>
+          <th>Export</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="inline">sendWebhook(url, payload, opts)</code></td>
+          <td style="color:var(--purple)">async fn</td>
+          <td>Send a signed webhook POST with retries. Returns a full <code class="inline">DeliveryRecord</code>.</td>
+        </tr>
+        <tr>
+          <td><code class="inline">WebhookDispatcher</code></td>
+          <td style="color:var(--indigo-light)">class</td>
+          <td>Register endpoints, match topics with wildcards, fan-out concurrently.</td>
+        </tr>
+        <tr>
+          <td><code class="inline">WebhookReceiver</code></td>
+          <td style="color:var(--indigo-light)">class</td>
+          <td>Verify incoming webhooks — signatures, timestamp tolerance, replay protection.</td>
+        </tr>
+        <tr>
+          <td><code class="inline">DeliveryTracker</code></td>
+          <td style="color:var(--indigo-light)">class</td>
+          <td>In-memory circular buffer. Query history, get stats, listen to events.</td>
+        </tr>
+        <tr>
+          <td><code class="inline">sign(payload, secret, opts?)</code></td>
+          <td style="color:var(--green)">fn</td>
+          <td>Generate a <code class="inline">t=...,v1=...</code> signature header directly.</td>
+        </tr>
+        <tr>
+          <td><code class="inline">verify(raw, header, secret, opts?)</code></td>
+          <td style="color:var(--green)">fn</td>
+          <td>Verify a signature header string. Returns <code class="inline">{ valid, reason }</code>.</td>
+        </tr>
+        <tr>
+          <td><code class="inline">WebhookSignatureError</code></td>
+          <td style="color:var(--amber)">class</td>
+          <td>Custom error thrown on signature failure — includes <code class="inline">code</code> and <code class="inline">reason</code>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<hr class="divider" />
+
+<!-- ─── INSTRUCTOR CARD ─── -->
+<section id="instructor">
+  <div class="section-label">Submission</div>
+  <h2>For the instructor</h2>
+  <p class="section-desc">A quick reference summary of what this project demonstrates and how to evaluate it.</p>
+
+  <div class="instructor-card">
+    <div>
+      <h3>✅ What was built</h3>
+      <ul class="check-list">
+        <li>Published npm package — <code class="inline">@ishant3907/hookpoint</code></li>
+        <li>Zero external runtime dependencies (pure Node.js 18+)</li>
+        <li>HMAC-SHA256 webhook signing &amp; constant-time verification</li>
+        <li>Automatic retries with exponential / linear / fixed backoff + jitter</li>
+        <li>Replay attack prevention via event ID cache &amp; timestamp window</li>
+        <li>WebhookDispatcher with wildcard topic fan-out</li>
+        <li>WebhookReceiver helper for inbound verification</li>
+        <li>DeliveryTracker — circular buffer with stats &amp; event emitter</li>
+        <li>Full TypeScript type declarations (<code class="inline">index.d.ts</code>)</li>
+        <li>Test suite using native <code class="inline">node:test</code> (no Jest/Mocha)</li>
+        <li>Interactive live dashboard at <code class="inline">GET /</code></li>
+      </ul>
+    </div>
+    <div>
+      <h3>🖥️ How to run &amp; test</h3>
+      <ul class="cmd-list">
+        <li>npm install</li>
+        <li>npm start          # starts server on :3000</li>
+        <li>npm test           # runs node:test suite</li>
+        <li>npm run simulate   # CLI simulation script</li>
+        <li>npm run example:client</li>
+      </ul>
+      <div style="margin-top:1rem;">
+        <h3>📦 Package on npm</h3>
+        <p style="font-size:0.83rem;color:var(--muted);margin-top:0.4rem;">
+          <a href="https://www.npmjs.com/package/@ishant3907/hookpoint" style="color:var(--indigo-light);">npmjs.com/package/@ishant3907/hookpoint</a>
+        </p>
+      </div>
+      <div style="margin-top:1rem;">
+        <h3>🔗 GitHub repository</h3>
+        <p style="font-size:0.83rem;color:var(--muted);margin-top:0.4rem;">
+          <a href="https://github.com/ishant-rgb-hub/HookPoint_demo" style="color:var(--indigo-light);">github.com/ishant-rgb-hub/HookPoint_demo</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <p>Built by <strong>Ishant</strong> · HookPoint v1.0.0 · MIT License</p>
+  <p style="margin-top:0.4rem;">
+    <a href="https://www.npmjs.com/package/@ishant3907/hookpoint">npm</a> ·
+    <a href="https://github.com/ishant-rgb-hub/HookPoint_demo">GitHub</a>
+  </p>
+</footer>
+
+<script>
+  function switchTab(btn, panelId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById(panelId).classList.add('active');
+  }
+
+  function copyInstall(btn) {
+    navigator.clipboard.writeText('npm install @ishant3907/hookpoint').then(() => {
+      btn.textContent = 'Copied!';
+      btn.style.background = 'var(--indigo)';
+      btn.style.color = '#fff';
+      setTimeout(() => { btn.textContent = 'Copy'; btn.style.background = ''; btn.style.color = ''; }, 2000);
+    });
+  }
+</script>
+</body>
+</html>
