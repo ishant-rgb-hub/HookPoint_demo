@@ -16,7 +16,7 @@ try {
   process.exit(0);
 }
 
-const { WebhookReceiver, WebhookSignatureError } = require('hookpoint');
+const { WebhookReceiver, WebhookSignatureError } = require('@ishant3907/hookpoint');
 
 const app = express();
 const PORT = process.env.PORT || 3001;

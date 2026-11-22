@@ -7,7 +7,7 @@
  * microservice or worker using the `hookpoint` package.
  */
 
-const { sendWebhook, sign } = require('hookpoint');
+const { sendWebhook, sign } = require('@ishant3907/hookpoint');
 
 const TARGET_URL = process.env.WEBHOOK_TARGET || 'http://localhost:3000/webhook';
 const SECRET = process.env.WEBHOOK_SECRET || 'whsec_evaluation_test_secret_2026';

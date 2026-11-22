@@ -2,7 +2,7 @@
 
 const http = require('node:http');
 const { createApp } = require('./src/app');
-const { sign } = require('hookpoint');
+const { sign } = require('@ishant3907/hookpoint');
 
 // ANSI Colors for terminal output
 const colors = {

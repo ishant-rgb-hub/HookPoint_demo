@@ -4,7 +4,7 @@ const { test, describe, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const http = require('node:http');
 const { createApp } = require('../src/app');
-const { sign } = require('hookpoint');
+const { sign } = require('@ishant3907/hookpoint');
 
 describe('WebhookReceiver & Server Security Test Suite', () => {
   let server;

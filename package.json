@@ -26,7 +26,6 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@ishant3907/hookpoint": "^1.0.0",
-    "hookpoint": "file:./hookpoint-1.0.0.tgz"
+    "@ishant3907/hookpoint": "^1.0.0"
   }
 }

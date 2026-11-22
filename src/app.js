@@ -10,7 +10,7 @@ const {
   sign,
   verify,
   WebhookSignatureError
-} = require('hookpoint');
+} = require('@ishant3907/hookpoint');
 
 const defaultConfig = require('./config');
 const { defaultStore } = require('./store');
